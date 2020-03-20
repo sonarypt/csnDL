@@ -1,0 +1,9 @@
+browser_send_pings False
+dom.battery.enabled False
+geo.enabled False
+webgl.disabled True
+browser.download.folderList 2
+browser.download.manager.showWhenStarting False
+browser.download.dir /data/user/chiasenhac
+browser.helperApps.neverAsk.saveToDisk audio/mpeg;audio/x-mpeg-3;video/mpeg;vidoe/x-mpeg
+media.play-stand-alone False
