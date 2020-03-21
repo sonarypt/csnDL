@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException
 
 import os
+import re
 import random
 import time
 
@@ -42,7 +43,6 @@ for conf in confs:
 
 driver = webdriver.Firefox(executable_path='/usr/bin/geckodriver', firefox_profile=profile)
 
-
 # function to wait for driver
 def driverWait(driver):
     try:
@@ -56,6 +56,16 @@ def driverWait(driver):
 def check_dup(file, directory):
     list_file = os.listdir(directory)
     if str(file) in list_file:
+        return 1
+    else:
+        return 0
+
+# remove some exception - remove Remix and Nonstop
+r1 = '(-\w)*[Rr][Ee][Mm][Ii][Xx](\w)*'
+r2 = '(-\w)*[Nn][Oo][Nn][Ss][Tt][Oo][Pp](\w)*'
+rm = re.compile(r'(%s|%s)' % (r1,r2))
+def check_exc(file_name):
+    if rm.search(file_name):
         return 1
     else:
         return 0
@@ -83,15 +93,15 @@ def download_song(driver):
         driver.quit()
     dl_link = dl_text.get_attribute("href")
     file_name = dl_link.split("/")[-1].replace("%20", " ")
-    if not check_dup(file_name, crawl_dir):
+    if not check_dup(file_name, crawl_dir) and not check_exc(file_name):
         j += 1
         # better formatted output
         print("%6d : %s" % (j, file_name))
         dl_text.click()
-    while not check_dup(str(file_name), crawl_dir):
-        time.sleep(1)
-        if check_dup(str(file_name), crawl_dir):
-            break
+        while not check_dup(str(file_name), crawl_dir):
+            time.sleep(1)
+            if check_dup(str(file_name), crawl_dir):
+                break
 
 # list of all new uploaded songs
 choice = str(input("Enter a single CSN link or open newest uploaded by default: " or csn_newsongs))
@@ -133,3 +143,4 @@ driver.quit()
 # check if webpage is fully loaded (DONE, really easy)
 # check if files are downloaded (DONE) - using sleep and check file duplication function
 # check duplicated files (DONE)
+# remove all remix/nonstop songs (need to use regex)
