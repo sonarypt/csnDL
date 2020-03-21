@@ -1,9 +1,13 @@
 browser_send_pings False
+browser.sessionstore.max_tabs_undo 0
 dom.battery.enabled False
 geo.enabled False
 webgl.disabled True
 browser.download.folderList 2
+network.cookie.cookieBehavior 1
+network.cookie.lifetimePolicy 2
+privacy.trackingprotection.enabled True
 browser.download.manager.showWhenStarting False
 browser.download.dir /data/user/chiasenhac
-browser.helperApps.neverAsk.saveToDisk audio/mpeg;audio/x-mpeg-3;video/mpeg;vidoe/x-mpeg
+browser.helperApps.neverAsk.saveToDisk audio/mpeg;audio/x-mpeg-3;video/mpeg;video/x-mpeg
 media.play-stand-alone False
