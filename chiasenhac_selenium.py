@@ -11,12 +11,16 @@ import os
 import re
 import random
 import time
+# remove accents in Unicode string later
+import unidecode
+from datetime import datetime
 
 csn_mainlink = "https://chiasenhac.vn"
 csn_newsongs = csn_mainlink + "/bai-hat-moi.html"
-crawl_dir = "/data/user/chiasenhac/"
+crawl_dir = "/data/user/musics/"
 
 delay = 5 # seconds
+delay_obscure = 10 # seconds
 
 # create download dir if it does not exist
 if not os.path.exists(crawl_dir):
@@ -52,6 +56,14 @@ def driverWait(driver):
     except:
         driver.quit()
 
+def driverWaitObscure(driver):
+    try:
+        element = WebDriverWait(driver, delay_obscure).until(
+                EC.presence_of_element_located((By.XPATH, r'//div[@class="modal-backdrop fade show"]'))
+                )
+    except:
+        driver.quit()
+
 # function to check duplication
 def check_dup(file, directory):
     list_file = os.listdir(directory)
@@ -63,7 +75,8 @@ def check_dup(file, directory):
 # remove some exception - remove Remix and Nonstop
 r1 = '(-\w)*[Rr][Ee][Mm][Ii][Xx](\w)*'
 r2 = '(-\w)*[Nn][Oo][Nn][Ss][Tt][Oo][Pp](\w)*'
-rm = re.compile(r'(%s|%s)' % (r1,r2))
+r3 = '(-\w)*[Dd][Jj](\w)*'
+rm = re.compile(r'(%s|%s|%s)' % (r1,r2,r3))
 def check_exc(file_name):
     if rm.search(file_name):
         return 1
@@ -73,20 +86,18 @@ def check_exc(file_name):
 # download songs in when display main page
 def download_song(driver):
     global j
-    driverWait(driver)
+    driverWait(driver) 
+    # search for backdrop obscure
     try:
-        dl_tab = driver.find_element_by_xpath("//a[@id='pills-download-tab']")
-    except NoSuchElementException:
-        driver.quit()
-    try:
-        dl_tab.click()
-    # in case the song got error, <div id="myModal" class="modal fade show"> obscures
-    # press button to exit
-    except ElementClickInterceptedException:
+        element = WebDriverWait(driver, delay_obscure).until(
+                EC.presence_of_element_located((By.XPATH, r'//div[@class="modal-backdrop fade show"]'))
+                )
         reload_button = driver.find_element_by_xpath("//div[@class='modal_content_csn']/a")
         reload_button.click()
-        return
-    #  dl_text = driver.find_element_by_xpath("(//ul[@class='list-unstyled download_status']/li)[1]/a[1]")
+        pass
+    except:
+        dl_tab = driver.find_element_by_xpath("//a[@id='pills-download-tab']")
+    dl_tab.click()
     try:
         dl_text = driver.find_element_by_xpath("//ul[@class='list-unstyled download_status']/li[1]/a[1]")
     except NoSuchElementException:
@@ -96,7 +107,9 @@ def download_song(driver):
     if not check_dup(file_name, crawl_dir) and not check_exc(file_name):
         j += 1
         # better formatted output
-        print("%6d : %s" % (j, file_name))
+        now = datetime.now()
+        current_time = now.strftime("%d-%m-%Y %H:%M:%S")
+        print("%6d : %-80s %s" % (j, file_name, current_time))
         dl_text.click()
         while not check_dup(str(file_name), crawl_dir):
             time.sleep(1)
@@ -104,7 +117,9 @@ def download_song(driver):
                 break
 
 # list of all new uploaded songs
-choice = str(input("Enter a single CSN link or open newest uploaded by default: " or csn_newsongs))
+choice = str(input("Enter a single CSN link or open newest uploaded by default: "))
+if not choice:
+    choice = csn_newsongs
 driver.get(choice)
 if choice == csn_newsongs:
     # get first song
@@ -124,23 +139,21 @@ while j<i:
     # get the suggested songs from their website for our use later
     driverWait(driver)
     time.sleep(random.randint(1,5))
-    rd = random.randint(1,6)
+    rd = random.randint(1,6) 
     try:
-        next_song = driver.find_element_by_xpath("//ul[@class='list-unstyled list_music sug_music']/li[" + str(rd) + "]//a")
-        next_song.click()
-    except NoSuchElementException:
-        driver.quit()
-    except ElementClickInterceptedException:
+        element = WebDriverWait(driver, delay_obscure).until(
+                EC.presence_of_element_located((By.XPATH, r'//div[@class="modal-backdrop fade show"]'))
+                )
         reload_button = driver.find_element_by_xpath("//div[@class='modal_content_csn']/a")
         reload_button.click()
-        continue
+        pass
+    # Handle error when website fail to load
+    except WebDriverException:
+        driver.refresh()
+        driverWait()
+    except:
+        next_song = driver.find_element_by_xpath("//ul[@class='list-unstyled list_music sug_music']/li[" + str(rd) + "]//a")
+        next_song.click()
     download_song(driver)
 
 driver.quit()
-
-
-# TODO:
-# check if webpage is fully loaded (DONE, really easy)
-# check if files are downloaded (DONE) - using sleep and check file duplication function
-# check duplicated files (DONE)
-# remove all remix/nonstop songs (need to use regex)
